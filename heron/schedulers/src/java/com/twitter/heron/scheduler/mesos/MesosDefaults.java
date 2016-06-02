@@ -21,12 +21,7 @@ import com.twitter.heron.common.basics.TypeUtils;
 import com.twitter.heron.spi.common.Resource;
 
 public final class MesosDefaults {
-  private MesosDefaults() {
-
-  }
-
   private static final Logger LOG = Logger.getLogger(MesosDefaults.class.getName());
-
   // holds the mapping between the config keys and their default values
   private static Map<String, Object> defaults;
 
@@ -39,6 +34,10 @@ public final class MesosDefaults {
     } catch (ClassNotFoundException e) {
       throw new RuntimeException("Failed to load the Defaults class ", e);
     }
+  }
+
+  private MesosDefaults() {
+
   }
 
   /*

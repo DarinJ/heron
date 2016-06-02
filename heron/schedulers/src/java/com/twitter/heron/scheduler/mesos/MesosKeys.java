@@ -14,18 +14,13 @@
 
 package com.twitter.heron.scheduler.mesos;
 
-import com.twitter.heron.spi.common.Resource;
-
 import java.util.Map;
 import java.util.logging.Logger;
 
+import com.twitter.heron.spi.common.Resource;
+
 public final class MesosKeys {
   private static final Logger LOG = Logger.getLogger(MesosKeys.class.getName());
-
-  private MesosKeys() {
-
-  }
-
   // holds the mapping of keys to their corresponding key strings
   private static Map<String, Object> keys;
 
@@ -37,6 +32,10 @@ public final class MesosKeys {
     } catch (ClassNotFoundException e) {
       throw new RuntimeException("Failed to load the config Keys class ", e);
     }
+  }
+
+  private MesosKeys() {
+
   }
 
   /*

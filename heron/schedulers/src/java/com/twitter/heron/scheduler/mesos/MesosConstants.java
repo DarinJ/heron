@@ -15,13 +15,12 @@
 package com.twitter.heron.scheduler.mesos;
 
 public final class MesosConstants {
+  // name of the resource file that holds the config keys
+  public static final String KEYS_YAML = "com/twitter/heron/scheduler/mesos/keys.yaml";
+  // name of the resource file that holds the default values for config keys
+  public static final String DEFAULTS_YAML = "com/twitter/heron/scheduler/mesos/defaults.yaml";
+
   private MesosConstants() {
 
   }
-
-  // name of the resource file that holds the config keys
-  public static final String KEYS_YAML = "com/twitter/heron/scheduler/mesos/keys.yaml";
-
-  // name of the resource file that holds the default values for config keys
-  public static final String DEFAULTS_YAML = "com/twitter/heron/scheduler/mesos/defaults.yaml";
 }

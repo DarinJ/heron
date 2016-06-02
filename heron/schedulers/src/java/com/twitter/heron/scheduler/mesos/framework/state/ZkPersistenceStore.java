@@ -1,12 +1,18 @@
-package com.twitter.heron.scheduler.mesos.framework.state;
+// Copyright 2016 Twitter. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
-import com.twitter.heron.scheduler.mesos.framework.jobs.BaseJob;
-import com.twitter.heron.scheduler.mesos.framework.jobs.BaseTask;
-import com.twitter.heron.scheduler.mesos.framework.jobs.TaskUtils;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.mesos.Protos;
+package com.twitter.heron.scheduler.mesos.framework.state;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -15,18 +21,26 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.retry.ExponentialBackoffRetry;
+import org.apache.mesos.Protos;
+
+import com.twitter.heron.scheduler.mesos.framework.jobs.BaseJob;
+import com.twitter.heron.scheduler.mesos.framework.jobs.BaseTask;
+import com.twitter.heron.scheduler.mesos.framework.jobs.TaskUtils;
+
 public class ZkPersistenceStore implements PersistenceStore {
   private static final Logger LOG = Logger.getLogger(ZkPersistenceStore.class.getName());
-  private CuratorFramework client;
-
   private final String connectionString;
-
   private final String path;
   private final String frameworkIdPath;
   private final String jobPath;
   private final String taskPath;
+  private CuratorFramework client;
 
-  public ZkPersistenceStore(String connectionString, int connectionTimeoutMs, int sessionTimeoutMs, String rootPath) {
+  public ZkPersistenceStore(String connectionString, int connectionTimeoutMs,
+                            int sessionTimeoutMs, String rootPath) {
     // these are reasonable arguments for the ExponentialBackoffRetry. The first
     // retry will wait 1 second - the second will wait up to 2 seconds - the
     // third will wait up to 4 seconds.
@@ -42,7 +56,7 @@ public class ZkPersistenceStore implements PersistenceStore {
         .retryPolicy(retryPolicy)
         .connectionTimeoutMs(connectionTimeoutMs)
         .sessionTimeoutMs(sessionTimeoutMs)
-            // etc. etc.
+        // etc. etc.
         .build();
 
     // Start it
@@ -53,7 +67,6 @@ public class ZkPersistenceStore implements PersistenceStore {
     jobPath = path + "/jobs";
     taskPath = path + "/tasks";
 
-
     try {
       if (client.checkExists().forPath(jobPath) == null) {
         client.create().creatingParentsIfNeeded().forPath(jobPath);
@@ -61,7 +74,9 @@ public class ZkPersistenceStore implements PersistenceStore {
       if (client.checkExists().forPath(taskPath) == null) {
         client.create().creatingParentsIfNeeded().forPath(taskPath);
       }
+      //CHECKSTYLE.OFF Curator throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
       throw new RuntimeException("Unable to create the path for topology", e);
     }
   }
@@ -70,19 +85,21 @@ public class ZkPersistenceStore implements PersistenceStore {
   public boolean persistJob(BaseJob baseJob) {
     LOG.info("Persist Job: " + BaseJob.getJobDefinitionInJSON(baseJob));
 
-    String path = jobPath + "/" + baseJob.name;
+    String dataPath = jobPath + "/" + baseJob.name;
     byte[] data = BaseJob.getJobDefinitionInJSON(baseJob).getBytes();
     try {
-      if (client.checkExists().forPath(path) != null) {
+      if (client.checkExists().forPath(dataPath) != null) {
         LOG.info("Reset the Job data");
-        client.setData().forPath(path, data);
+        client.setData().forPath(dataPath, data);
 
         return true;
       }
 
       client.create().creatingParentsIfNeeded().
-          forPath(path, data);
+          forPath(dataPath, data);
+      //CHECKSTYLE.OFF Curator throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
       LOG.log(Level.SEVERE, "Failed to persist job", e);
       return false;
     }
@@ -94,19 +111,21 @@ public class ZkPersistenceStore implements PersistenceStore {
   public boolean persistTask(String name, BaseTask task) {
     LOG.info(String.format("Persist Task: %s with details: %s", name, task));
 
-    String path = taskPath + "/" + name;
+    String dataPath = taskPath + "/" + name;
     byte[] data = BaseTask.getTaskInJSON(task).getBytes();
     try {
-      if (client.checkExists().forPath(path) != null) {
+      if (client.checkExists().forPath(dataPath) != null) {
         LOG.info("Reset the task data");
-        client.setData().forPath(path, data);
+        client.setData().forPath(dataPath, data);
 
         return true;
       }
 
       client.create().creatingParentsIfNeeded().
-          forPath(path, data);
+          forPath(dataPath, data);
+      //CHECKSTYLE.OFF Curator throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
       LOG.log(Level.SEVERE, "Failed to persist task", e);
       return false;
     }
@@ -120,7 +139,9 @@ public class ZkPersistenceStore implements PersistenceStore {
 
     try {
       client.delete().forPath(taskPath + "/" + TaskUtils.getJobNameForTaskId(taskId));
+      //CHECKSTYLE.OFF Curator throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
       LOG.log(Level.SEVERE, "Failed to delete task", e);
       return false;
     }
@@ -133,7 +154,9 @@ public class ZkPersistenceStore implements PersistenceStore {
     LOG.info("Remove Job: " + jobName);
     try {
       client.delete().forPath(jobPath + "/" + jobName);
+      //CHECKSTYLE.OFF Curator throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
       LOG.log(Level.SEVERE, "Failed to delete job", e);
       return false;
     }
@@ -158,7 +181,9 @@ public class ZkPersistenceStore implements PersistenceStore {
 
         tasks.put(TaskUtils.getJobNameForTaskId(task.taskId), task);
       }
+      //CHECKSTYLE.OFF Curation throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
       LOG.log(Level.SEVERE, "Unable to get tasks: ", e);
     }
 
@@ -180,7 +205,9 @@ public class ZkPersistenceStore implements PersistenceStore {
         LOG.info("Def: " + jobDefinitionInJSON);
         jobs.add(BaseJob.getJobFromJSONString(jobDefinitionInJSON));
       }
+      //CHECKSTYLE.OFF Curation throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
       LOG.log(Level.SEVERE, "Unable to get jobs: ", e);
     }
 
@@ -199,7 +226,9 @@ public class ZkPersistenceStore implements PersistenceStore {
       }
 
       res = client.getData().forPath(frameworkIdPath);
+      //CHECKSTYLE.OFF Curation throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
       throw new RuntimeException("Failed to read from frameworkId. ", e);
     }
 
@@ -220,7 +249,10 @@ public class ZkPersistenceStore implements PersistenceStore {
 
       client.create().creatingParentsIfNeeded().
           forPath(frameworkIdPath, frameworkID.getValue().getBytes());
+      //CHECKSTYLE.OFF Curation throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
+
       LOG.log(Level.SEVERE, "Failed to persistent frameworkId", e);
       return false;
     }
@@ -233,7 +265,9 @@ public class ZkPersistenceStore implements PersistenceStore {
 
     try {
       client.delete().forPath(frameworkIdPath);
+      //CHECKSTYLE.OFF Curation throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
       LOG.log(Level.SEVERE, "Failed to remove frameworkId", e);
       return false;
     }
@@ -248,7 +282,9 @@ public class ZkPersistenceStore implements PersistenceStore {
 
     try {
       client.delete().deletingChildrenIfNeeded().forPath(path);
+      //CHECKSTYLE.OFF Curation throws Exception
     } catch (Exception e) {
+      //CHECKSTYLE.ON
       LOG.info("Unable to clean");
       return false;
     }
